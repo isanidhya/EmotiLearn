@@ -1,7 +1,10 @@
+
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/firebase";
 import {
   SidebarProvider,
   Sidebar,
@@ -50,10 +53,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userName");
-    router.replace("/");
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem("userRole");
+      localStorage.removeItem("userName");
+      router.replace("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
   
   if (!role) {

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -5,6 +6,13 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +34,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GoogleIcon } from "@/components/icons/GoogleIcon";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 type Role = "student" | "teacher" | "admin";
 
@@ -44,6 +53,7 @@ const signupSchema = z.object({
 
 export function AuthForm() {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -65,26 +75,58 @@ export function AuthForm() {
       role: "student",
     },
   });
+  
+  const handleSuccess = (role: Role, name: string) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("userName", name);
+    }
+    router.push(`/${role}`);
+    setLoading(false);
+  };
 
-  const handleAuth = (role: Role) => {
+  const handleError = (error: any) => {
+    toast({
+      variant: "destructive",
+      title: "Authentication Failed",
+      description: error.message,
+    });
+    setLoading(false);
+  };
+
+  const onLogin = async (values: z.infer<typeof loginSchema>) => {
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("userRole", role);
-        localStorage.setItem("userName", role === 'student' ? 'Alex Doe' : role === 'teacher' ? 'Ms. Davis' : 'Admin');
-      }
-      router.push(`/${role}`);
-    }, 1000);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+      handleSuccess(values.role as Role, userCredential.user.displayName || values.email);
+    } catch (error: any) {
+      handleError(error);
+    }
   };
 
-  const onLogin = (values: z.infer<typeof loginSchema>) => {
-    handleAuth(values.role as Role);
+  const onSignup = async (values: z.infer<typeof signupSchema>) => {
+    setLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      // In a real app, you'd also update the user's profile with their name
+      handleSuccess(values.role as Role, values.name);
+    } catch (error: any) {
+      handleError(error);
+    }
   };
 
-  const onSignup = (values: z.infer<typeof signupSchema>) => {
-    handleAuth(values.role as Role);
+  const handleGoogleSignIn = async (role: Role) => {
+    setLoading(true);
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      handleSuccess(role, user.displayName || user.email || 'User');
+    } catch (error: any) {
+      handleError(error);
+    }
   };
+
 
   return (
     <Tabs defaultValue="login" className="w-full">
@@ -253,7 +295,7 @@ export function AuthForm() {
           </span>
         </div>
       </div>
-      <Button variant="outline" className="w-full" onClick={() => handleAuth("student")} disabled={loading}>
+      <Button variant="outline" className="w-full" onClick={() => handleGoogleSignIn(loginForm.getValues('role') as Role)} disabled={loading}>
         <GoogleIcon className="mr-2 h-4 w-4" />
         Google
       </Button>
