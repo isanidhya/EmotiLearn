@@ -11,8 +11,10 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase/firebase";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,7 +110,19 @@ export function AuthForm() {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      // In a real app, you'd also update the user's profile with their name
+      const user = userCredential.user;
+      
+      // Update Firebase auth profile
+      await updateProfile(user, { displayName: values.name });
+
+      // Save user data to Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: values.name,
+        email: values.email,
+        role: values.role,
+      });
+
       handleSuccess(values.role as Role, values.name);
     } catch (error: any) {
       handleError(error);
@@ -121,6 +135,15 @@ export function AuthForm() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      
+      // Save user data to Firestore (or update if they already exist)
+       await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        role: role, // Role selected from the form
+      }, { merge: true }); // Use merge to avoid overwriting data if user already exists
+
       handleSuccess(role, user.displayName || user.email || 'User');
     } catch (error: any) {
       handleError(error);
