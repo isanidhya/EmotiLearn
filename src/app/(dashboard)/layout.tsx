@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
@@ -143,6 +144,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const navItems = getNavItems(role);
+  const profileItem = {
+    href: "/profile",
+    icon: User,
+    label: "Profile",
+    isActive: pathname === "/profile",
+  };
 
   return (
     <SidebarProvider>
@@ -157,18 +164,28 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={item.isActive}
-                  tooltip={{ children: item.label }}
-                >
-                  <Link href={item.href}>
+                <Link href={item.href}>
+                  <SidebarMenuButton
+                    isActive={item.isActive}
+                    tooltip={{ children: item.label }}
+                  >
                     <item.icon />
                     <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
+                  </SidebarMenuButton>
+                </Link>
               </SidebarMenuItem>
             ))}
+             <SidebarMenuItem>
+              <Link href={profileItem.href}>
+                <SidebarMenuButton
+                  isActive={profileItem.isActive}
+                  tooltip={{ children: profileItem.label }}
+                >
+                  <profileItem.icon />
+                  <span>{profileItem.label}</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
