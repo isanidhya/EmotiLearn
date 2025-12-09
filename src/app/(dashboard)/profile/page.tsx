@@ -54,7 +54,7 @@ export default function ProfilePage() {
           form.reset({ name: userData.name });
         }
       } else {
-        router.push('/');
+        router.push('/login');
       }
     });
     return () => unsubscribe();
@@ -95,7 +95,7 @@ export default function ProfilePage() {
       await signOut(auth);
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
-      router.push('/');
+      router.push('/login');
     } catch (error: any) {
       toast({
         variant: 'destructive',

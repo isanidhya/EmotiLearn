@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const storedRole = localStorage.getItem("userRole") as Role;
     const storedName = localStorage.getItem("userName");
     if (!storedRole) {
-      router.replace("/");
+      router.replace("/login");
     } else {
       setRole(storedRole);
       setUserName(storedName);
@@ -59,7 +59,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       await signOut(auth);
       localStorage.removeItem("userRole");
       localStorage.removeItem("userName");
-      router.replace("/");
+      router.replace("/login");
     } catch (error) {
       console.error("Error signing out:", error);
     }
